@@ -19,6 +19,7 @@ SALARY_FILE = os.path.join(ABSPATH, 'raw', 'salary', 'hep-th_2004_2010.csv')
 PAPER_FILE = os.path.join(ABSPATH, 'raw', 'paper',
                           'hep-th_ucprofpapers_2004_2010.csv')
 OUTPUT_DIR = os.path.join(ABSPATH, 'output')
+PHD_FILE = os.path.join(ABSPATH, 'raw', 'prof', 'hep-th_phdyear_2004_2010.csv')
 
 
 YEARS = range(2004, 2011)
@@ -150,6 +151,18 @@ def load_prof_paper():
             prof["papers"] = set(arxiv_ids)
 
 
+def load_prof_phd_year():
+    with open(PHD_FILE) as f:
+        f.readline()
+        for line in f.readlines():
+            line = line.strip()
+            author_key, year = line.split(",")
+            year = int(year)
+            if author_key not in PROFESSOR:
+                PROFESSOR[author_key] = {}
+            PROFESSOR[author_key]["phd_year"] = year
+
+
 def calc_prof_centrality():
     KEYWORDS = ("pagerank", "citations", "dpagerank", "dcitations")
     for author_key, prof in PROFESSOR.items():
@@ -193,11 +206,13 @@ def export_summary(outfolder, year):
         os.makedirs(outfolder)
     filename = "summary_%d.csv" % year
     with open(os.path.join(outfolder, filename), "w") as f:
-        f.write("author_id,gross,base,citations,pagerank\n")
+        f.write("author_id,years_since_phd,gross,base,citations,pagerank\n")
         for author_id, prof in PROFESSOR.items():
-            if year in prof["salary"] and year in prof["centrality"]:
+            if year in prof["salary"] and year in prof["centrality"] and 'phd_year' in prof:
                 # author_id, gross, base, citations, pagerank
                 f.write(author_id)
+                f.write(',')
+                f.write(str(year-prof['phd_year']))
                 f.write(',')
                 f.write(str(prof["salary"][year]["gross"]))
                 f.write(',')
@@ -215,6 +230,8 @@ if __name__ == "__main__":
     load_salary()
     print 'loading uc prof papers...'
     load_prof_paper()
+    print 'loading uc prof phd year...'
+    load_prof_phd_year()
     print 'loading centrality...'
     load_centrality()
     print 'calculating prof centrality...'
