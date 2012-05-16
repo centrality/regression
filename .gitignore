@@ -1,0 +1,5 @@
+output
+*.pyc
+*.swo
+*.swp
+.DS_Store
