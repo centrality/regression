@@ -59,13 +59,11 @@ def load_centrality():
                 if id not in CENTRALITY:
                     CENTRALITY[id] = {}
                 CENTRALITY[id][year] = {"pagerank":pagerank, "citations":citations}
-
     # fill in years w/o data
     for id in CENTRALITY:
         for year in YEARS:
             if year not in CENTRALITY[id]:
                 CENTRALITY[id][year] = {"pagerank":0.0, "citations":0}
-
     # calculate delta centrality
     for id in CENTRALITY:
         for year in YEARS:
@@ -101,10 +99,14 @@ def load_salary():
                     "base": base,
                     "overtime": overtime,
                     "extra": extra,
-                    "dgross": 0.0,
-                    "dbase": 0.0,
-                    "dovertime": 0.0,
-                    "dextra": 0.0
+                    "dgross": None,
+                    "dbase": None,
+                    "dovertime": None,
+                    "dextra": None,
+                    "pgross": None,
+                    "pbase": None,
+                    "povertime": None,
+                    "pextra": None
             }
     for author_key, prof in PROFESSOR.items():
         if "salary" not in prof:
@@ -116,44 +118,9 @@ def load_salary():
                 prev = salary[year-1]
                 for key in ("gross", "base", "overtime", "extra"):
                     curr["d"+key] = curr[key] - prev[key]
-
-
-def load_salary():
-    # parse and load
-    with open(SALARY_FILE) as f:
-        for line in f.readlines():
-            parts = line.split(",")
-            author_key = parts[0]
-            year = int(parts[1])
-            gross = float(parts[2])
-            base = float(parts[3])
-            overtime = float(parts[4])
-            extra = float(parts[5])
-            if author_key not in PROFESSOR:
-                PROFESSOR[author_key] = {}
-            if "salary" not in PROFESSOR[author_key]:
-                PROFESSOR[author_key]["salary"] = {}
-            PROFESSOR[author_key]["salary"][year] = {
-                    "year": year,
-                    "gross": gross,
-                    "base": base,
-                    "overtime": overtime,
-                    "extra": extra,
-                    "dgross": 0.0,
-                    "dbase": 0.0,
-                    "dovertime": 0.0,
-                    "dextra": 0.0
-            }
-    for author_key, prof in PROFESSOR.items():
-        if "salary" not in prof:
-            prof["salary"] = {}
-        salary = prof["salary"]
-        for year in YEARS:
-            if year in salary and year-1 in salary:
-                curr = salary[year]
-                prev = salary[year-1]
                 for key in ("gross", "base", "overtime", "extra"):
-                    curr["d"+key] = curr[key] - prev[key]
+                    if prev[key]:
+                        curr["p"+key] = curr["d"+key] / prev[key]
 
 
 def load_prof_paper():
@@ -200,23 +167,19 @@ def export_diff(outfolder):
     for year in YEARS:
         filename = "diff_%d.csv" % year
         with open(os.path.join(outfolder, filename), "w") as f:
-            f.write("author_id,phd_year,dgross,dbase,dcitations,dpagerank\n")
+            f.write("author_id,years_since_phd,gross,base,dgross,dbase,pgross,pbase,dcitations,dpagerank\n")
             for author_id, prof in PROFESSOR.items():
-                if year in prof["salary"] and year in prof["centrality"] and \
-                                              prof["salary"][year]["dgross"] != 0 and \
-                                              'phd_year' in prof:
+                if year in prof["salary"] and \
+                   year in prof["centrality"] and \
+                   prof["salary"][year]["dgross"] != 0 and \
+                   'phd_year' in prof:
                     # author_id, dgross, dbase, dcitations, dpagerank
-                    f.write(author_id)
-                    f.write(',')
-                    f.write(str(year-prof['phd_year']))
-                    f.write(',')
-                    f.write(str(prof["salary"][year]["dgross"]))
-                    f.write(',')
-                    f.write(str(prof["salary"][year]["dbase"]))
-                    f.write(',')
-                    f.write(str(prof["centrality"][year]["dcitations"]))
-                    f.write(',')
-                    f.write(str(prof["centrality"][year]["dpagerank"]))
+                    args = [author_id, year-prof["phd_year"],
+                            prof["salary"][year]["gross"], prof["salary"][year]["base"],
+                            prof["salary"][year]["dgross"], prof["salary"][year]["dbase"],
+                            prof["salary"][year]["pgross"], prof["salary"][year]["pbase"],
+                            prof["centrality"][year]["dcitations"], prof["centrality"][year]["dpagerank"]]
+                    f.write(",".join([str(arg) for arg in args]))
                     f.write('\n')
             f.flush()
 
@@ -228,19 +191,11 @@ def export_summary(outfolder, year):
     with open(os.path.join(outfolder, filename), "w") as f:
         f.write("author_id,years_since_phd,gross,base,citations,pagerank\n")
         for author_id, prof in PROFESSOR.items():
-            if year in prof["salary"] and year in prof["centrality"] and 'phd_year' in prof:
-                # author_id, gross, base, citations, pagerank
-                f.write(author_id)
-                f.write(',')
-                f.write(str(year-prof['phd_year']))
-                f.write(',')
-                f.write(str(prof["salary"][year]["gross"]))
-                f.write(',')
-                f.write(str(prof["salary"][year]["base"]))
-                f.write(',')
-                f.write(str(prof["centrality"][year]["citations"]))
-                f.write(',')
-                f.write(str(prof["centrality"][year]["pagerank"]))
+            if year in prof["salary"] and year in prof["centrality"] and "phd_year" in prof:
+                args = [author_id, year-prof["phd_year"],
+                        prof["salary"][year]["gross"], prof["salary"][year]["base"],
+                        prof["centrality"][year]["citations"], prof["centrality"][year]["pagerank"]]
+                f.write(",".join([str(arg) for arg in args]))
                 f.write('\n')
         f.flush()
 
@@ -248,11 +203,10 @@ def export_summary(outfolder, year):
 if __name__ == "__main__":
     print 'loading salary...'
     load_salary()
-    print 'loading uc prof papers...'
+    print 'loading uc prof papers and phd year...'
     load_prof_paper()
-    print 'loading uc prof phd year...'
     load_prof_phd_year()
-    print 'loading centrality...'
+    print 'loading centrality for papers...'
     load_centrality()
     print 'calculating prof centrality...'
     calc_prof_centrality()
