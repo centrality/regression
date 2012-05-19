@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 data formats
 
@@ -201,16 +202,16 @@ def export_summary(outfolder, year):
 
 
 if __name__ == "__main__":
-    print 'loading salary...'
+    print('loading salary...')
     load_salary()
-    print 'loading uc prof papers and phd year...'
+    print('loading uc prof papers and phd year...')
     load_prof_paper()
     load_prof_phd_year()
-    print 'loading centrality for papers...'
+    print('loading centrality for papers...')
     load_centrality()
-    print 'calculating prof centrality...'
+    print('calculating prof centrality...')
     calc_prof_centrality()
-    print 'exporting...'
+    print('exporting...')
     export_diff(OUTPUT_DIR)
     export_summary(OUTPUT_DIR, YEARS[-1])
-    print 'and we\'re done!'
+    print('and we\'re done!')
