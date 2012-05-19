@@ -3,7 +3,7 @@
 data formats
 
 PROFESSOR = {
-    P_MUCKERJEE: {
+    "P_MUKHERJEE": {
         "salary": {
             2004: {
                 "gross", "base", "overtime", "extra",
