@@ -1,12 +1,29 @@
 """
-format for the professor dictionary
-{<author_key>: {"name":<name>, "author_key":<author_key>,
-                "salary": {"gross", "base", "overtime", "extra",
-                             "dgross", "dbase", "dovertime", "dextra"},
-                "centrality": {<year> :{"pagerank", "citations",
-                                 "dpagerank", "dcitations"}}}
+data formats
 
-CENTRALITY = {<arxiv_id>: {<year>: {"pagerank", "citations"}}}
+PROFESSOR = {
+    P_MUCKERJEE: {
+        "salary": {
+            2004: {
+                "gross", "base", "overtime", "extra",
+                "dgross", "dbase", "dovertime", "dextra"
+            }
+        },
+        "centrality": {
+            2004: {"pagerank", "citations", "dpagerank", "dcitations"}
+        },
+        "phd_year": 1970,
+        "papers": set(["hep-th/049382", "1183.2066"])
+    }
+}
+
+CENTRALITY = {
+    "hep-th/04392": {
+        2004: { "pagerank":1, "citations":2, "dpagerank":0.5, "dcitations":2 },
+        ...
+        2011: { "pagerank":1, "citations":2, "dpagerank":0.5, "dcitations":2 }
+    },
+}
 
 
 """
@@ -183,12 +200,15 @@ def export_diff(outfolder):
     for year in YEARS:
         filename = "diff_%d.csv" % year
         with open(os.path.join(outfolder, filename), "w") as f:
-            f.write("author_id,dgross,dbase,dcitations,dpagerank\n")
+            f.write("author_id,phd_year,dgross,dbase,dcitations,dpagerank\n")
             for author_id, prof in PROFESSOR.items():
                 if year in prof["salary"] and year in prof["centrality"] and \
-                                              prof["salary"][year]["dgross"] != 0:
+                                              prof["salary"][year]["dgross"] != 0 and \
+                                              'phd_year' in prof:
                     # author_id, dgross, dbase, dcitations, dpagerank
                     f.write(author_id)
+                    f.write(',')
+                    f.write(str(year-prof['phd_year']))
                     f.write(',')
                     f.write(str(prof["salary"][year]["dgross"]))
                     f.write(',')
