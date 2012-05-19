@@ -56,7 +56,7 @@ def load_centrality():
     for filename in os.listdir(CENTRALITY_DIR):
         field, year, etc = filename.split("_")
         year = int(year)
-        with open(os.path.join(CENTRALITY_DIR, filename)) as f:
+        with open(os.path.join(CENTRALITY_DIR, filename), 'rt') as f:
             f.readline()
             for line in f.readlines():
                 paper = line.split(",")
@@ -64,23 +64,13 @@ def load_centrality():
                 citations = int(paper[2])
                 pagerank = float(paper[5])
                 CENTRALITY[id][year] = {"pagerank":pagerank, "citations":citations}
-    # fill in years w/o data
-    for id in CENTRALITY:
-        for year in YEARS:
-            if year not in CENTRALITY[id]:
-                CENTRALITY[id][year] = {"pagerank":0.0, "citations":0}
     # calculate delta centrality
     for id in CENTRALITY:
         for year in YEARS:
             curr = CENTRALITY[id][year]
-            Δpagerank = curr["pagerank"]
-            Δcitations = curr["citations"]
-            if year-1 in CENTRALITY[id]:
-                prev = CENTRALITY[id][year-1]
-                Δpagerank -= prev["pagerank"]
-                Δcitations -= prev["citations"]
-            curr["Δpagerank"] = Δpagerank
-            curr["Δcitations"] = Δcitations
+            prev = CENTRALITY[id][year - 1]
+            curr["Δpagerank"] = (curr["pagerank"] or 0) - (prev["pagerank"] or 0)
+            curr["Δcitations"] = (curr["citations"] or 0) - (prev["citations"] or 0)
 
 
 def load_salary():
@@ -107,7 +97,7 @@ def load_salary():
                 prev = salary[year-1]
                 for t in SALARY_TYPES:
                     curr["d"][t] = curr[""][t] - prev[""][t]
-                    curr["p"][t] = curr["Δ"][t] / prev[""][key]
+                    curr["p"][t] = curr["Δ"][t] / prev[""][t]
 
 
 def load_prof_paper():
