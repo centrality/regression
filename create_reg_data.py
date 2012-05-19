@@ -46,6 +46,7 @@ PROFESSOR = {}
 
 
 def load_centrality():
+    '''Loads and normalizes the input centralities and calculates the changes.'''
     # parse and load
     for filename in os.listdir(CENTRALITY_DIR):
         field, year, etc = filename.split("_")
@@ -80,6 +81,7 @@ def load_centrality():
 
 
 def load_salary():
+    '''Loads and normalizes the input salaries and calculates the changes.'''
     # parse and load
     with open(SALARY_FILE) as f:
         for line in f.readlines():
