@@ -7,11 +7,11 @@ PROFESSOR = {
         "salary": {
             2004: {
                 "gross", "base", "overtime", "extra",
-                "dgross", "dbase", "dovertime", "dextra"
+                "Δgross", "Δbase", "Δovertime", "Δextra"
             }
         },
         "centrality": {
-            2004: {"pagerank", "citations", "dpagerank", "dcitations"}
+            2004: {"pagerank", "citations", "Δpagerank", "Δcitations"}
         },
         "phd_year": 1970,
         "papers": set(["hep-th/049382", "1183.2066"])
@@ -20,9 +20,9 @@ PROFESSOR = {
 
 CENTRALITY = {
     "hep-th/04392": {
-        2004: { "pagerank":1, "citations":2, "dpagerank":0.5, "dcitations":2 },
+        2004: { "pagerank":1, "citations":2, "Δpagerank":0.5, "Δcitations":2 },
         ...
-        2011: { "pagerank":1, "citations":2, "dpagerank":0.5, "dcitations":2 }
+        2011: { "pagerank":1, "citations":2, "Δpagerank":0.5, "Δcitations":2 }
     },
 }
 
@@ -69,14 +69,14 @@ def load_centrality():
     for id in CENTRALITY:
         for year in YEARS:
             curr = CENTRALITY[id][year]
-            dpagerank = curr["pagerank"]
-            dcitations = curr["citations"]
+            Δpagerank = curr["pagerank"]
+            Δcitations = curr["citations"]
             if year-1 in CENTRALITY[id]:
                 prev = CENTRALITY[id][year-1]
-                dpagerank -= prev["pagerank"]
-                dcitations -= prev["citations"]
-            curr["dpagerank"] = dpagerank
-            curr["dcitations"] = dcitations
+                Δpagerank -= prev["pagerank"]
+                Δcitations -= prev["citations"]
+            curr["Δpagerank"] = Δpagerank
+            curr["Δcitations"] = Δcitations
 
 
 def load_salary():
@@ -100,10 +100,10 @@ def load_salary():
                     "base": base,
                     "overtime": overtime,
                     "extra": extra,
-                    "dgross": None,
-                    "dbase": None,
-                    "dovertime": None,
-                    "dextra": None,
+                    "Δgross": None,
+                    "Δbase": None,
+                    "Δovertime": None,
+                    "Δextra": None,
                     "pgross": None,
                     "pbase": None,
                     "povertime": None,
@@ -149,7 +149,7 @@ def load_prof_phd_year():
 
 
 def calc_prof_centrality():
-    KEYWORDS = ("pagerank", "citations", "dpagerank", "dcitations")
+    KEYWORDS = ("pagerank", "citations", "Δpagerank", "Δcitations")
     for author_key, prof in PROFESSOR.items():
         prof["centrality"] = {}
         for year in YEARS:
@@ -168,18 +168,18 @@ def export_diff(outfolder):
     for year in YEARS:
         filename = "diff_%d.csv" % year
         with open(os.path.join(outfolder, filename), "w") as f:
-            f.write("author_id,years_since_phd,gross,base,dgross,dbase,pgross,pbase,dcitations,dpagerank\n")
+            f.write("author_id,years_since_phd,gross,base,Δgross,Δbase,pgross,pbase,Δcitations,Δpagerank\n")
             for author_id, prof in PROFESSOR.items():
                 if year in prof["salary"] and \
                    year in prof["centrality"] and \
-                   prof["salary"][year]["dgross"] != 0 and \
+                   prof["salary"][year]["Δgross"] != 0 and \
                    'phd_year' in prof:
-                    # author_id, dgross, dbase, dcitations, dpagerank
+                    # author_id, Δgross, Δbase, Δcitations, Δpagerank
                     args = [author_id, year-prof["phd_year"],
                             prof["salary"][year]["gross"], prof["salary"][year]["base"],
-                            prof["salary"][year]["dgross"], prof["salary"][year]["dbase"],
+                            prof["salary"][year]["Δgross"], prof["salary"][year]["Δbase"],
                             prof["salary"][year]["pgross"], prof["salary"][year]["pbase"],
-                            prof["centrality"][year]["dcitations"], prof["centrality"][year]["dpagerank"]]
+                            prof["centrality"][year]["Δcitations"], prof["centrality"][year]["Δpagerank"]]
                     f.write(",".join([str(arg) for arg in args]))
                     f.write('\n')
             f.flush()
