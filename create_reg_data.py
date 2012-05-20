@@ -50,6 +50,22 @@ CENTRALITY = infinite_dict()
 PROFESSOR = infinite_dict()
 
 
+def calc_prof_aggregation(aggregator):
+    '''Calculates the aggregate score, using the given aggregate index, for every (professor, year, centrality measure), and stores the result in prof[aggregator].'''
+    print('\t{0}'.format(agg.__name__))
+    for author_key, prof in PROFESSOR.items():
+        for year in YEARS:
+            for cm in CENTRALITY_MEASURES:
+                #class lazydict:
+                #    def __getitem__(self, paper): return CENTRALITY[paper][year][cm] or 0
+                prof[aggregator][year][cm] = aggregator(prof["papers"], lambda paper: CENTRALITY[paper][year][cm] or 0)	# @@@@@ Taking an absent centrality as 0.
+
+def Σ(profpapers, paper_centralities):
+    return sum((paper_centralities(paper) for paper in profpapers))
+
+CENTRALITY_MEASURES = ('pagerank', 'citations', 'Δpagerank', 'Δcitations',)
+AGGREGATORS = (Σ,)#@@@@@TODO: 'g_index', 'h_index',)
+
 def load_centrality():
     '''Loads and normalizes the input centralities and calculates the changes.'''
     # parse and load
@@ -125,19 +141,6 @@ def load_prof_phd_year():
             PROFESSOR[author_key]["phd_year"] = year
 
 
-def calc_prof_centrality():
-    KEYWORDS = ("pagerank", "citations", "Δpagerank", "Δcitations")
-    for author_key, prof in PROFESSOR.items():
-        prof["centrality"] = {}
-        for year in YEARS:
-            prof["centrality"][year] = {}
-            for keyword in KEYWORDS:
-                prof["centrality"][year][keyword] = 0.0
-            for paper in prof["papers"]:
-                if paper in CENTRALITY:
-                    for keyword in KEYWORDS:
-                        prof["centrality"][year][keyword] += CENTRALITY[paper][year][keyword]
-
 # Doesn't work right now
 
 #def export_diff(outfolder):
@@ -187,8 +190,9 @@ if __name__ == "__main__":
     load_prof_phd_year()
     print('loading centrality for papers...')
     load_centrality()
-    print('calculating prof centrality...')
-    calc_prof_centrality()
+    print('aggregating prof centralities...')
+    for agg in AGGREGATORS:
+        calc_prof_aggregation(agg)
     #print('exporting...')
     #export_diff(OUTPUT_DIR)
     #export_summary(OUTPUT_DIR, YEARS[-1])
