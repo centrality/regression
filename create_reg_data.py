@@ -31,6 +31,7 @@ CENTRALITY = {
 """
 import os
 import csv
+import itertools as I
 from collections import namedtuple
 from collections import Counter
 from collections import defaultdict
@@ -66,8 +67,8 @@ def AGGREGATORS():
 	def Σ(profpapers, paper_centralities):
 		return sum((paper_centralities(paper) for paper in profpapers))
 	
-	def h_index(profpapers, paper_centralities):
-		# {c : # of papers with centrality c}
+	def h(profpapers, paper_centralities):
+		# c → number of papers with centrality c
 		centrality_counts = Counter()
 		for paper in profpapers:
 			centrality_counts[paper_centralities(paper)] += 1
@@ -77,6 +78,16 @@ def AGGREGATORS():
 			h += 1
 		# h is the smallest integer s.t. fewer than h papers have centrality at least h
 		return h - 1
+		
+	def g(profpapers, paper_centralities):
+		# n → total centrality of top n papers
+		cum_centrality = list(I.accumulate(I.chain([0], reversed(sorted(map(paper_centralities, profpapers))))))
+		g = 0
+		try:
+			while cum_centrality[g] >= g * g:
+				g += 1
+		except IndexError: pass	# if every paper is significant
+		return g - 1
 	
 	return locals().values()
 
