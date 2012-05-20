@@ -124,15 +124,15 @@ def load_salary():
 	# parse and load
 	with open(SALARY_FILE, "rt", newline="") as f:
 		for info in map(namedtuple("SalaryInfo", ['author_key', 'year', 'gross', 'base', 'overtime', 'extra', 'x0', 'x1', 'x2', 'x3'])._make, csv.reader(f)):
-			PROFESSOR[info.author_key]["salary"][info.year] = {
+			PROFESSOR[info.author_key]["salary"][int(info.year)] = {
 				"": {
-					"gross": info.gross,
-					"base": info.base,
-					"overtime": info.overtime,
-					"extra": info.extra,
+					"gross": float(info.gross),
+					"base": float(info.base),
+					"overtime": float(info.overtime),
+					"extra": float(info.extra),
 				},
-				"Δ": defaultdict(),	# default is None
-				"p": defaultdict(),
+				"Δ": defaultdict(lambda: defaultdict(lambda: None)),
+				"p": defaultdict(lambda: defaultdict(lambda: None)),
 			}
 	for author_key, prof in PROFESSOR.items():
 		salary = prof["salary"]
@@ -141,8 +141,8 @@ def load_salary():
 				curr = salary[year]
 				prev = salary[year-1]
 				for t in SALARY_TYPES:
-					curr["d"][t] = curr[""][t] - prev[""][t]
-					curr["p"][t] = curr["Δ"][t] / prev[""][t]
+					curr["Δ"][t] = curr[""][t] - prev[""][t]
+					curr["p"][t] = curr["Δ"][t] / prev[""][t] if prev[""][t] else None	# divide-by-0 case
 
 
 def load_prof_paper():
