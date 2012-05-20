@@ -168,30 +168,32 @@ def load_prof_phd_year():
 				PROFESSOR[author_key] = {}
 			PROFESSOR[author_key]["phd_year"] = year
 
+#@@@@@@@@@@
+PROFESSOR[prof_id][aggregator][year][centrality_measure]
 
-# Doesn't work right now
-
-#def export_diff(outfolder):
-	#if os.path.exists(outfolder) is False:
-		#os.makedirs(outfolder)
-	#for year in YEARS:
-		#filename = "diff_%d.csv" % year
-		#with open(os.path.join(outfolder, filename), "w") as f:
-			#f.write("author_id,years_since_phd,gross,base,Δgross,Δbase,pgross,pbase,Δcitations,Δpagerank\n")
-			#for author_id, prof in PROFESSOR.items():
-				#if year in prof["salary"] and \
-				   #year in prof["centrality"] and \
-				   #prof["salary"][year]["Δgross"] != 0 and \
-				   #'phd_year' in prof:
-					## author_id, Δgross, Δbase, Δcitations, Δpagerank
-					#args = [author_id, year-prof["phd_year"],
-							#prof["salary"][year]["gross"], prof["salary"][year]["base"],
-							#prof["salary"][year]["Δgross"], prof["salary"][year]["Δbase"],
-							#prof["salary"][year]["pgross"], prof["salary"][year]["pbase"],
-							#prof["centrality"][year]["Δcitations"], prof["centrality"][year]["Δpagerank"]]
-					#f.write(",".join([str(arg) for arg in args]))
-					#f.write('\n')
-			#f.flush()
+def export_diff(outfolder):
+	if not os.path.exists(outfolder):
+		os.makedirs(outfolder)
+	for year in YEARS:
+		with open(os.path.join(outfolder, "diff_%d.csv" % year), "w", newline="") as f:
+			fieldnames = I.chain(('year', 'author_id','years_since_phd','gross','base','Δgross','Δbase','pgross','pbase',),
+				["{0}({1})".format(agg.__name__, c) for c in CENTRALITY_MEASURES for agg in AGGREGATORS])
+			f = csv.DictWriter(f, fieldnames)
+			f.writeheader()
+			for author_id, prof in PROFESSOR.items():
+				if year in prof["salary"] and \
+				   year in prof["centrality"] and \
+				   prof["salary"][year]["Δgross"] != 0 and \
+				   'phd_year' in prof:
+					# author_id, Δgross, Δbase, Δcitations, Δpagerank
+					args = [author_id, year-prof["phd_year"],
+							prof["salary"][year]["gross"], prof["salary"][year]["base"],
+							prof["salary"][year]["Δgross"], prof["salary"][year]["Δbase"],
+							prof["salary"][year]["pgross"], prof["salary"][year]["pbase"],
+							prof["centrality"][year]["Δcitations"], prof["centrality"][year]["Δpagerank"]]
+					f.write(",".join([str(arg) for arg in args]))
+					f.write('\n')
+			f.flush()
 
 
 #def export_summary(outfolder, year):
