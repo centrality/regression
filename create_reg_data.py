@@ -187,11 +187,11 @@ def export_diff(outfolder):
 						'years_since_phd': year - prof['phd_year'],
 					}
 					# selected salary measures
-					d += {"{0}{1}".format(deltatype, salarytype): salary[deltatype][salarytype]
-						for deltatype in ('', 'Δ', 'p',) for salarytype in ('gross', 'base',)}
+					d.update({"{0}{1}".format(deltatype, salarytype): salary[deltatype][salarytype]
+						for deltatype in ('', 'Δ', 'p',) for salarytype in ('gross', 'base',)})
 					# all the possible (aggregator, centrality) combinations
-					d += {"{0}({1})".format(agg.__name__, c): prof[agg][year][c]
-						for c in CENTRALITY_MEASURES for agg in AGGREGATORS}
+					d.update({"{0}({1})".format(agg.__name__, c): prof[agg][year][c]
+						for c in CENTRALITY_MEASURES for agg in AGGREGATORS})
 					
 					f.writerow(d)
 
