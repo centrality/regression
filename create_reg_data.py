@@ -56,7 +56,7 @@ PROFESSOR = infinite_dict()
 
 def calc_prof_aggregation(aggregator):
 	'''Calculates the aggregate score, using the given aggregate index, for every (professor, year, centrality measure), and stores the result in prof[aggregator].'''
-	print('\t{0}'.format(agg.__name__))
+	print('\t{0}'.format(aggregator.__name__))
 	for author_key, prof in PROFESSOR.items():
 		for year in YEARS:
 			for cm in CENTRALITY_MEASURES:
@@ -168,51 +168,35 @@ def load_prof_phd_year():
 				PROFESSOR[author_key] = {}
 			PROFESSOR[author_key]["phd_year"] = year
 
-#@@@@@@@@@@
-PROFESSOR[prof_id][aggregator][year][centrality_measure]
 
 def export_diff(outfolder):
 	if not os.path.exists(outfolder):
 		os.makedirs(outfolder)
-	for year in YEARS:
-		with open(os.path.join(outfolder, "diff_%d.csv" % year), "w", newline="") as f:
-			fieldnames = I.chain(('year', 'author_id','years_since_phd','gross','base','Δgross','Δbase','pgross','pbase',),
-				["{0}({1})".format(agg.__name__, c) for c in CENTRALITY_MEASURES for agg in AGGREGATORS])
-			f = csv.DictWriter(f, fieldnames)
-			f.writeheader()
-			for author_id, prof in PROFESSOR.items():
-				if year in prof["salary"] and \
-				   year in prof["centrality"] and \
-				   prof["salary"][year]["Δgross"] != 0 and \
-				   'phd_year' in prof:
-					# author_id, Δgross, Δbase, Δcitations, Δpagerank
-					args = [author_id, year-prof["phd_year"],
-							prof["salary"][year]["gross"], prof["salary"][year]["base"],
-							prof["salary"][year]["Δgross"], prof["salary"][year]["Δbase"],
-							prof["salary"][year]["pgross"], prof["salary"][year]["pbase"],
-							prof["centrality"][year]["Δcitations"], prof["centrality"][year]["Δpagerank"]]
-					f.write(",".join([str(arg) for arg in args]))
-					f.write('\n')
-			f.flush()
+	with open(os.path.join(outfolder, "diff_allyears.csv"), "w", newline="") as f:
+		fieldnames = list(I.chain(('year','author_id','years_since_phd','gross','base','Δgross','Δbase','pgross','pbase',),
+			["{0}({1})".format(agg.__name__, c) for c in CENTRALITY_MEASURES for agg in AGGREGATORS]))
+		f = csv.DictWriter(f, fieldnames)
+		f.writeheader()
+		for author_id, prof in PROFESSOR.items():
+			for year in YEARS:
+				salary = prof["salary"][year]
+				if salary["Δ"]["gross"] and 'phd_year' in prof:
+					d = {
+						'year': year,
+						'author_id': author_id,
+						'years_since_phd': year - prof['phd_year'],
+					}
+					# selected salary measures
+					d += {"{0}{1}".format(deltatype, salarytype): salary[deltatype][salarytype]
+						for deltatype in ('', 'Δ', 'p',) for salarytype in ('gross', 'base',)}
+					# all the possible (aggregator, centrality) combinations
+					d += {"{0}({1})".format(agg.__name__, c): prof[agg][year][c]
+						for c in CENTRALITY_MEASURES for agg in AGGREGATORS}
+					
+					f.writerow(d)
 
 
-#def export_summary(outfolder, year):
-	#if os.path.exists(outfolder) is False:
-		#os.makedirs(outfolder)
-	#filename = "summary_%d.csv" % year
-	#with open(os.path.join(outfolder, filename), "w") as f:
-		#f.write("author_id,years_since_phd,gross,base,citations,pagerank\n")
-		#for author_id, prof in PROFESSOR.items():
-			#if year in prof["salary"] and year in prof["centrality"] and "phd_year" in prof:
-				#args = [author_id, year-prof["phd_year"],
-						#prof["salary"][year]["gross"], prof["salary"][year]["base"],
-						#prof["centrality"][year]["citations"], prof["centrality"][year]["pagerank"]]
-				#f.write(",".join([str(arg) for arg in args]))
-				#f.write('\n')
-		#f.flush()
-
-
-if __name__ == "__main__":
+def load_and_process():
 	print('loading salary...')
 	load_salary()
 	print('loading uc prof papers and phd year...')
@@ -223,7 +207,10 @@ if __name__ == "__main__":
 	print('aggregating prof centralities...')
 	for agg in AGGREGATORS:
 		calc_prof_aggregation(agg)
-	#print('exporting...')
-	#export_diff(OUTPUT_DIR)
-	#export_summary(OUTPUT_DIR, YEARS[-1])
-	#print('and we\'re done!')
+
+
+if __name__ == "__main__":
+	load_and_process()
+	print('exporting...')
+	export_diff(OUTPUT_DIR)
+	print('Done')
