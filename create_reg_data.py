@@ -71,15 +71,16 @@ def load_centrality():
             prev = CENTRALITY[id][year - 1]
             curr["Δpagerank"] = (curr["pagerank"] or 0) - (prev["pagerank"] or 0)
             curr["Δcitations"] = (curr["citations"] or 0) - (prev["citations"] or 0)
+    # @@@@@ It seems some papers don't have centralities!
 
 
 def load_salary():
     '''Loads and normalizes the input salaries and calculates the changes.'''
     SALARY_TYPES = ("gross", "base", "overtime", "extra")
     # parse and load
-    with csv.reader(open(SALARY_FILE, "rt")) as f:
-        for info in map(namedtuple("SalaryInfo", ['author_key', 'year', 'gross', 'base', 'overtime', 'extra'])._make, f):
-            PROFESSOR[author_key]["salary"][year] = {
+    with open(SALARY_FILE, "rt") as f:
+        for info in map(namedtuple("SalaryInfo", ['author_key', 'year', 'gross', 'base', 'overtime', 'extra', 'x0', 'x1', 'x2', 'x3'])._make, csv.reader(f)):
+            PROFESSOR[info.author_key]["salary"][info.year] = {
                 "": {
                     "gross": info.gross,
                     "base": info.base,
