@@ -2,6 +2,8 @@
 """
 data formats
 
+PROFESSOR[prof_id]["salary"][year][deltatype][salarytype] == salary
+PROFESSOR[prof_id][aggregator][year][centrality_measure] == aggregator(centrality_measure) for prof_id in year
 PROFESSOR = {
 	"P_MUKHERJEE": {
 		"salary": {
@@ -19,6 +21,7 @@ PROFESSOR = {
 	}
 }
 
+CENTRALITY[paperid][year][centrality_measure] == centrality
 CENTRALITY = {
 	"hep-th/04392": {
 		2004: { "pagerank":1, "citations":2, "Δpagerank":0.5, "Δcitations":2 },
@@ -26,8 +29,6 @@ CENTRALITY = {
 		2011: { "pagerank":1, "citations":2, "Δpagerank":0.5, "Δcitations":2 }
 	},
 }
-
-
 """
 import os
 import csv
@@ -35,10 +36,11 @@ import itertools as I
 from collections import namedtuple
 from collections import Counter
 from collections import defaultdict
-infinite_dict = lambda : defaultdict(infinite_dict)
+infinite_dict = lambda: defaultdict(infinite_dict)
 call = lambda f: f()
 
 
+# File paths
 ABSPATH = os.path.dirname(__file__)
 CENTRALITY_DIR = os.path.join(ABSPATH, 'raw', 'centrality')
 SALARY_FILE = os.path.join(ABSPATH, 'raw', 'salary', 'hep-th_2004_2010.csv')
@@ -58,8 +60,6 @@ def calc_prof_aggregation(aggregator):
 	for author_key, prof in PROFESSOR.items():
 		for year in YEARS:
 			for cm in CENTRALITY_MEASURES:
-				#class lazydict:
-				#	def __getitem__(self, paper): return CENTRALITY[paper][year][cm] or 0
 				prof[aggregator][year][cm] = aggregator(prof["papers"], lambda paper: CENTRALITY[paper][year][cm] or 0)	# @@@@@ Taking an absent centrality as 0.
 
 @call
@@ -109,10 +109,10 @@ def load_centrality():
 				pagerank = float(paper[5])
 				CENTRALITY[id][year] = {"pagerank":pagerank, "citations":citations}
 	# calculate delta centrality
-	for id in CENTRALITY:
+	for paperid in CENTRALITY:
 		for year in YEARS:
-			curr = CENTRALITY[id][year]
-			prev = CENTRALITY[id][year - 1]
+			curr = CENTRALITY[paperid][year]
+			prev = CENTRALITY[paperid][year - 1]
 			curr["Δpagerank"] = (curr["pagerank"] or 0) - (prev["pagerank"] or 0)
 			curr["Δcitations"] = (curr["citations"] or 0) - (prev["citations"] or 0)
 	# @@@@@ It seems some papers don't have centralities!
@@ -122,7 +122,7 @@ def load_salary():
 	'''Loads and normalizes the input salaries and calculates the changes.'''
 	SALARY_TYPES = ("gross", "base", "overtime", "extra")
 	# parse and load
-	with open(SALARY_FILE, "rt") as f:
+	with open(SALARY_FILE, "rt", newline="") as f:
 		for info in map(namedtuple("SalaryInfo", ['author_key', 'year', 'gross', 'base', 'overtime', 'extra', 'x0', 'x1', 'x2', 'x3'])._make, csv.reader(f)):
 			PROFESSOR[info.author_key]["salary"][info.year] = {
 				"": {
