@@ -34,6 +34,7 @@ import csv
 from collections import namedtuple
 from collections import defaultdict
 infinite_dict = lambda : defaultdict(infinite_dict)
+call = lambda f: f()
 
 
 ABSPATH = os.path.dirname(__file__)
@@ -60,11 +61,18 @@ def calc_prof_aggregation(aggregator):
                 #    def __getitem__(self, paper): return CENTRALITY[paper][year][cm] or 0
                 prof[aggregator][year][cm] = aggregator(prof["papers"], lambda paper: CENTRALITY[paper][year][cm] or 0)	# @@@@@ Taking an absent centrality as 0.
 
-def Σ(profpapers, paper_centralities):
-    return sum((paper_centralities(paper) for paper in profpapers))
+@call
+def AGGREGATORS():
+    def Σ(profpapers, paper_centralities):
+        return sum((paper_centralities(paper) for paper in profpapers))
+
+    def h_index(profpapers, paper_centralities):
+        1 / 0 #@@@@@@@@@
+    
+    return locals().values()
 
 CENTRALITY_MEASURES = ('pagerank', 'citations', 'Δpagerank', 'Δcitations',)
-AGGREGATORS = (Σ,)#@@@@@TODO: 'g_index', 'h_index',)
+
 
 def load_centrality():
     '''Loads and normalizes the input centralities and calculates the changes.'''
